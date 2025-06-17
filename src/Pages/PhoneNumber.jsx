@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import { auth } from "./lib/firebase";
 import { useNavigate } from "react-router-dom";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
-import { createOrUpdateUser } from "./lib/userService";
-import { AlertCircle } from "lucide-react";
-import { Alert, AlertDescription } from "../components/ui/alert";
 
 const PhoneNumberPage = () => {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -14,144 +8,124 @@ const PhoneNumberPage = () => {
   const [isShaking, setIsShaking] = useState(false);
   const navigate = useNavigate();
 
-  const validatePhoneNumber = (number) => {
-    const phoneRegex = /^[6-9]\d{9}$/;
-    return phoneRegex.test(number);
-  };
+  const validatePhoneNumber = (number) => /^[6-9]\d{9}$/.test(number);
 
   const handlePhoneNumberChange = (e) => {
-    const value = e.target.value.replace(/\D/g, '');
-    
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 10) {
       setPhoneNumber(value);
       setError("");
     } else {
-      setIsShaking(true);
-      setError("Phone number cannot exceed 10 digits");
-      setTimeout(() => setIsShaking(false), 650);
+      triggerShake("Phone number cannot exceed 10 digits");
     }
   };
 
-  const handleSaveUserDetails = async () => {
+  const triggerShake = (msg) => {
+    setError(msg);
+    setIsShaking(true);
+    setTimeout(() => setIsShaking(false), 650);
+  };
+
+  const handleSaveUserDetails = () => {
     if (!validatePhoneNumber(phoneNumber)) {
-      setError("Please enter a valid 10-digit Indian phone number");
-      setIsShaking(true);
-      setTimeout(() => setIsShaking(false), 650);
+      triggerShake("Please enter a valid 10-digit Indian phone number");
       return;
     }
-
-    if (!savingsGoal || isNaN(savingsGoal) || savingsGoal <= 0) {
+    const goal = Number(savingsGoal);
+    if (!goal || isNaN(goal) || goal <= 0) {
       setError("Please enter a valid savings goal amount");
       return;
     }
 
-    const user = auth.currentUser;
-
-    if (user) {
-      try {
-        await createOrUpdateUser(user.uid, {
-          phoneNumber: `+91${phoneNumber}`,
-          savingsGoal: Number(savingsGoal),
-          onboardingCompleted: true
-        });
-        navigate("/dashboard");
-      } catch (error) {
-        setError(error.message);
-      }
-    } else {
-      setError("User is not authenticated.");
-    }
+    // Simulate success
+    navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-slate-50 p-4">
-      <div className="space-y-6 w-full max-w-md">
-        <div className="space-y-2">
-          <div className="flex items-center mb-8">
-            <div className="text-indigo-600 font-bold text-xl">Fintrack</div>
-          </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Complete Your Profile</h1>
-          <p className="text-sm text-muted-foreground">
-            Enter your details to complete the setup:
-          </p>
+    <div className="min-h-screen bg-[#f9fbfd] flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl shadow-md w-full max-w-md p-8 space-y-6 animate-fadeIn">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-indigo-600">Fintrack</h1>
+        </div>
+
+        <div>
+          <h2 className="text-2xl font-semibold text-gray-900">Complete Your Profile</h2>
+          <p className="text-sm text-gray-500 mt-1">Enter your details to complete the setup:</p>
         </div>
 
         {error && (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
+          <div className="bg-red-100 text-red-500 rounded p-2 text-sm border border-red-300">
+            {error}
+          </div>
         )}
 
         <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Phone Number*</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number*</label>
             <div className="flex">
-              <div className="flex items-center px-3 bg-gray-100 border border-r-0 border-gray-200 rounded-l-md">
-                <span className="text-gray-500 text-sm">+91</span>
+              <div className="px-3 flex items-center bg-gray-100 border border-r-0 border-gray-200 rounded-l-md text-gray-600 text-sm">
+                +91
               </div>
-              <Input
+              <input
                 type="tel"
                 required
                 value={phoneNumber}
                 onChange={handlePhoneNumberChange}
-                className={`h-11 rounded-l-none ${isShaking ? 'animate-shake' : ''}`}
                 placeholder="Enter 10-digit number"
-                style={{
-                  "@keyframes shake": {
-                    "0%, 100%": { transform: "translateX(0)" },
-                    "25%": { transform: "translateX(8px)" },
-                    "75%": { transform: "translateX(-8px)" },
-                  }
-                }}
+                className={`w-full h-11 rounded-r-md px-3 border ${
+                  isShaking
+                    ? "border-red-400 animate-shake"
+                    : "border-gray-200 focus:border-indigo-500 focus:outline-none"
+                }`}
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Monthly Savings Goal (₹)*</label>
-            <Input
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Monthly Savings Goal (₹)*</label>
+            <input
               type="number"
               required
               value={savingsGoal}
               onChange={(e) => setSavingsGoal(e.target.value)}
-              className="h-11 no-spinner"
-              placeholder="Enter your monthly savings goal"
               min="0"
+              placeholder="Enter your monthly savings goal"
+              className="w-full h-11 px-3 border border-gray-200 rounded-md focus:border-indigo-500 focus:outline-none no-spinner"
             />
           </div>
 
-          <Button
-            type="button"
+          <button
             onClick={handleSaveUserDetails}
-            className="w-full py-5 bg-indigo-600 hover:bg-indigo-700"
+            className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-md transition"
           >
             Complete Setup
-          </Button>
+          </button>
         </div>
       </div>
 
       <style jsx>{`
-        /* Keyframes for shake animation */
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
-          25% { transform: translateX(8px); }
-          75% { transform: translateX(-8px); }
+          25% { transform: translateX(6px); }
+          75% { transform: translateX(-6px); }
         }
-
         .animate-shake {
-          animation: shake 0.65s cubic-bezier(.36,.07,.19,.97) both;
+          animation: shake 0.65s cubic-bezier(.36, .07, .19, .97) 1;
         }
-
-        /* CSS to remove spinner buttons */
+        .animate-fadeIn {
+          animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
         .no-spinner::-webkit-inner-spin-button,
         .no-spinner::-webkit-outer-spin-button {
           -webkit-appearance: none;
           margin: 0;
         }
-
         .no-spinner {
-          -moz-appearance: textfield; /* Firefox */
+          -moz-appearance: textfield;
         }
       `}</style>
     </div>
